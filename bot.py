@@ -1,6 +1,8 @@
 import os
 import re
 import math
+import signal
+import asyncio
 from collections import Counter
 import discord
 from discord import app_commands
@@ -413,6 +415,8 @@ class SearchView(discord.ui.View):
             except discord.HTTPException:
                 pass
 
+
+# --- HÀM XỬ LÝ SHUTDOWN GỬI LINK WAKEUP ---
 async def send_wakeup_link():
     """Gửi link wakeup vào channel trước khi bot dừng hẳn."""
     search_channel_id = int(os.getenv('SEARCH_CHANNEL_ID', '0'))
@@ -453,10 +457,12 @@ def register_shutdown_handler():
         except NotImplementedError:
             pass
 
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('Bot đã sẵn sàng hoạt động!')
+    register_shutdown_handler()
 
 
 @bot.event
@@ -496,40 +502,6 @@ async def on_message(message: discord.Message):
             view.message = await message.reply(embed=view.build_embed(), view=view)
 
     await bot.process_commands(message)
-
-# @bot.event
-# async def on_message(message: discord.Message):
-#     # Bỏ qua tin nhắn từ bot khác hoặc từ chính nó
-#     if message.author.bot:
-#         return
-
-#     if bot.user in message.mentions:
-#         query = re.sub(rf'<@!?{bot.user.id}>', '', message.content).strip()
-
-#         if not query:
-#             await message.reply("Bạn hãy nhập từ khóa tìm kiếm sau khi tag bot nhé! Ví dụ: `@fu trọ vinhomes ocean park`")
-#             return
-
-#         async with message.channel.typing():
-#             session = SearchSession(
-#                 query,
-#                 mode='auto',
-#                 lang='auto',
-#                 limit=30,
-#                 deep=False,
-#                 sites=[],
-#                 time='any',
-#             )
-#             await session.run()
-
-#             if not session.results:
-#                 await message.reply(f"Không tìm thấy kết quả nào cho từ khóa: **{query}**")
-#                 return
-
-#             view = SearchView(session, owner_id=message.author.id)
-#             view.message = await message.reply(embed=view.build_embed(), view=view)
-
-#     await bot.process_commands(message)
 
 
 if __name__ == '__main__':
