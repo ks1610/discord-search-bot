@@ -1,8 +1,6 @@
 import os
 import re
 import math
-import signal
-import asyncio
 from collections import Counter
 import discord
 from discord import app_commands
@@ -416,53 +414,10 @@ class SearchView(discord.ui.View):
                 pass
 
 
-# --- HÀM XỬ LÝ SHUTDOWN GỬI LINK WAKEUP ---
-async def send_wakeup_link():
-    """Gửi link wakeup vào channel trước khi bot dừng hẳn."""
-    search_channel_id = int(os.getenv('SEARCH_CHANNEL_ID', '0'))
-    channel = None
-    
-    if search_channel_id:
-        channel = bot.get_channel(search_channel_id)
-
-    # Nếu không tìm thấy qua ID, tìm channel theo tên 'fu-channel'
-    if not channel:
-        for guild in bot.guilds:
-            for ch in guild.text_channels:
-                if 'fu-channel' in ch.name.lower():
-                    channel = ch
-                    break
-            if channel:
-                break
-
-    if channel:
-        try:
-            wakeup_url = "https://discord-search-bot-1-bsgr.onrender.com/"
-            await channel.send(f"⚠️ Bot chuẩn bị tạm dừng do Server ngắt/khởi chạy lại. Nhấp để kích hoạt lại: {wakeup_url}")
-            print("Đã gửi URL Wakeup vào Discord thành công!")
-        except Exception as e:
-            print(f"Lỗi khi gửi thông báo wakeup: {e}")
-
-def register_shutdown_handler():
-    """Đăng ký lắng nghe tín hiệu SIGTERM/SIGINT từ Render để kích hoạt gửi link wakeup."""
-    loop = asyncio.get_event_loop()
-    
-    def handle_signal():
-        print("Nhận tín hiệu dừng (SIGTERM/SIGINT), đang gửi wakeup URL...")
-        asyncio.create_task(send_wakeup_link())
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig, handle_signal)
-        except NotImplementedError:
-            pass
-
-
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
     print('Bot đã sẵn sàng hoạt động!')
-    register_shutdown_handler()
 
 
 @bot.event
